@@ -1,0 +1,20 @@
+{
+  "name": "Projet_API",
+  "version": "1.0.0",
+  "description": "A simple API made with NodeJS & Express",
+  "main": "server.js",
+  "dependencies": {
+    "nodejs": "^0.0.0",
+    "express": "*",
+    "body-parser": "*",
+    "mongoose": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "Maxime Fleury",
+  "license": "ISC"
+}
