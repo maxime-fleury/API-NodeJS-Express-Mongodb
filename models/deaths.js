@@ -41,7 +41,7 @@ const Deaths_ = module.exports = mongoose.model('deaths', deathSchema);
 module.exports.getDeaths = (callback, limit, time, max, min) => {
 	time =  checkTime(time, parseInt(max), parseInt(min));
 	console.log("inside death: limit = " + limit + " " + "time = " + 	time);
-	if(limit == "All"){//noLimit
+	if(limit.toLowerCase() == "all"){//noLimit
 		if(time == undefined){
 			Deaths_.find(callback);
 		}
@@ -63,7 +63,7 @@ module.exports.getDeaths = (callback, limit, time, max, min) => {
 }
 function checkTime(time, max, min){
 	//console.log("time before checktime = " + time);
-	if(time != undefined && !Number.isNaN(parseInt(time))){//time exists and is a number
+	if(time != undefined && (Number.isInteger(parseInt(time)))){//time exists and is a number
 		time = parseInt(time);//make sure its casted
 //let res = (time > max) ? undefined : (time < min) ? undefined : time;
 		//console.log("time after checktime = " + res + " max: " + max + " min: " + min );
@@ -72,7 +72,6 @@ function checkTime(time, max, min){
 }
 module.exports.getMaxTime = (callback) => {
 	Deaths_.find(callback).sort({TIME:-1}).limit(1)
-
 }
 module.exports.getMinTime = (callback) => {
 	Deaths_.find(callback).sort({TIME:+1}).limit(1)
