@@ -25,11 +25,15 @@ app.get('/', (req, res) => {
 app.get('/api/death', function(req, res){
 		let limit = req.query.limit;
 		let time = req.query.time;
+		let order = req.query.order; 
+		let sex = req.query.sex;
+		let country = req.query.country;
 		//I don't know why its like that, its too weird couldn't find a way to
 		//get max and min, before you need a callback function and stuff doesn't
 		//exists outsite "Deaths.get...({function(){ HERE }});"
 		//I'm pretty sure its not meant to be used like this because this is
 		//insanly inconvenient 
+		if(!(limit == undefined && time == undefined && order == undefined))
 		Deaths.getMaxTime(function(err, death){
 			if(err){
 				console.log(err);
@@ -37,18 +41,37 @@ app.get('/api/death', function(req, res){
 			max = death[0].TIME;
 			Deaths.getMinTime(function(err, death){
 				min = death[0].TIME;
-				Deaths.getDeaths(function(err, death){ 
-					if(err){
-						console.log(err);
-					}
-					error = getErrors(min, max, time, limit);
-					//error = { error: -1, message: 'Everything is fine !'};
-					res.setHeader('Content-Type', 'application/json');
-					res.end(JSON.stringify({error, death}, null, 2));
-					
-				},limit, time, max, min);
+				if(order == undefined){
+					Deaths.getDeaths(function(err, death){ 
+						if(err){
+							console.log(err);
+						}
+						error = getErrors(min, max, time, limit, null, country);
+						//error = { error: -1, message: 'Everything is fine !'};
+						res.setHeader('Content-Type', 'application/json');
+						res.end(JSON.stringify({error, death}, null, 2));
+						
+					},limit, time, max, min, sex);
+				}
+				else{
+					console.log(order);
+					Deaths.getByOrder(function(err, death){ 
+						if(err){
+							console.log(err);
+						}
+						error = getErrors(min, max, time, limit, order);
+						//error = { error: -1, message: 'Everything is fine !'};
+						res.setHeader('Content-Type', 'application/json');
+						res.end(JSON.stringify({error, death}, null, 2));
+						
+					},limit, time, order, sex, country);
+				}
 			});
 		});
+		else{
+			
+			res.send(JSON.stringify({error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
+		}
 	console.log("new resquest");
 				
 });
@@ -59,26 +82,37 @@ app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 })
 
-function getErrors(min, max, time, limit){
+function getErrors(min, max, time, limit, order){
 	res = { error: -1, message: 'Everything is fine !'};
 	if(parseInt(time) > max )
 		res = {error: 0, message: 'Params.time > max in database, time not applied.'};
 	if(parseInt(time) <= min)
 		res = {error: 1, message: 'Params.time < min in database, time not applied.'};
 	if(!(Number.isInteger(parseInt(time, 10))))
-		res = {error: 2, message: 'Params.time is not a number, time not applied.'};
+		res = {error: 2, message: 'Params.time is not not a number, time not applied.'};
+	if(time == undefined)
+		res = {error: 2, message: 'Params.time is not defined, time not applied.'};
 	if(res.error != -1){
 		tmp = res.message;
 		if(limit == undefined){
-			tmp = [res.message, 'Parasm.limit is undefined, no limit applied.'];
+			tmp = [res.message, 'Params.limit is undefined, no limit applied.'];
 		}
 		else if(!(Number.isInteger(parseInt(limit,10)))){//is a positive integer ?
 			if(limit.toLowerCase() == 'all')
-			tmp = [res.message, 'Parasm.limit is set to \'all\', no limit applied.'];
+			tmp = [res.message, 'Params.limit is set to \'all\', no limit applied.'];
 			else
-			tmp = [res.message, 'Parasm.limit is not a number, default limit applied (150).'];
+			tmp = [res.message, 'Params.limit is not a number, default limit applied (150).'];
 		}else if(parseInt(limit) < 1){
-				tmp = [res.message, 'Parasm.limit < 1, default limit applied (150).'];
+				tmp = [res.message, 'Params.limit < 1, default limit applied (150).'];
+		}
+		if(order == null){
+			res.message = tmp;
+			if(order == undefined){
+				tmp = [res.message, 'Params.order is not defined, order query not applied.'];
+			}
+			else if(order.toLowerCase() != "acs" && order.toLowerCase() != "desc"){
+				tmp = [res.message, 'Params.order is neither equal to "acs" nor "desc", order query not applied.'];
+			}
 		}
 		res.message = tmp;
 	}

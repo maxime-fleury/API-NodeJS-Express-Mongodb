@@ -38,15 +38,23 @@ const deathSchema = mongoose.Schema({
 const Deaths_ = module.exports = mongoose.model('deaths', deathSchema);
 
 // Get Death
-module.exports.getDeaths = (callback, limit, time, max, min) => {
+module.exports.getDeaths = (callback, limit, time, max, min, sex, country) => {
+	sex = checkSex(sex);
 	time =  checkTime(time, parseInt(max), parseInt(min));
 	console.log("inside death: limit = " + limit + " " + "time = " + 	time);
-	if(limit.toLowerCase() == "all"){//noLimit
+	if(limit == undefined){//no limit applied
 		if(time == undefined){
-			Deaths_.find(callback);
+			Deaths_.find(callback).find({SEX: sex});
 		}
 		else{
-			Deaths_.find(callback).find({TIME: time});
+			Deaths_.find(callback).find({"$and": [{TIME: time}, sex]});
+		}
+	}else if(limit.toLowerCase() == "all"){//noLimit
+		if(time == undefined){
+			Deaths_.find(callback).find(sex);
+		}
+		else{
+			Deaths_.find(callback).find({"$and": [{TIME: time}, sex]});
 		}
 	}
 	else {//search is limited
@@ -54,12 +62,42 @@ module.exports.getDeaths = (callback, limit, time, max, min) => {
 			limit = 150;
 	
 		if(time == undefined){
-			Deaths_.find(callback).limit(parseInt(limit));
+			Deaths_.find(callback).find( sex  ).limit(parseInt(limit));
 		}
 		else{
-			Deaths_.find(callback).limit(parseInt(limit)).find({TIME: time});
+			Deaths_.find(callback).find({"$and": [{TIME: time}, sex, {"$search": [{GEO: "Denmark"}]}]}).limit(parseInt(limit));
+			console.log("searched in this else");
 		}
 	}
+}
+function checkCountry(country){
+	if(country == undefined){
+		return {};
+	}
+	else return {"$search": [{GEO: country}]}
+}
+function checkSex(sex){
+	if(sex == undefined){
+		sex = {"$or": [{SEX: "Total"}, {SEX: "Males"}, {SEX: "Females"}]};
+	}
+	else{
+		if(sex.toLowerCase() != "males" && sex.toLowerCase() != "females" && sex.toLowerCase() != "total"
+		&& sex.toLowerCase() != "male" && sex.toLowerCase() != "female"){
+			sex = {"$or": [{SEX: "Total"}, {SEX: "Males"}, {SEX: "Females"}]};//ANY
+		}
+		else{
+			if(sex.toLowerCase() == "males" || sex.toLowerCase() == "male"){//male or males
+				sex = {SEX: "Males"};
+			}else if(sex.toLowerCase() == "females" || sex.toLowerCase() == "female"){//females or females
+				sex = {SEX: "Females"};
+			}
+			else if(sex.toLowerCase() == "total"){
+				sex = {SEX: "Total"};
+			}
+		}
+	}
+	console.log(sex);
+	return sex;
 }
 function checkTime(time, max, min){
 	//console.log("time before checktime = " + time);
@@ -75,5 +113,55 @@ module.exports.getMaxTime = (callback) => {
 }
 module.exports.getMinTime = (callback) => {
 	Deaths_.find(callback).sort({TIME:+1}).limit(1)
+}
+module.exports.getByOrder = (callback, limit, time, order, sex, country) =>{
+	sex = checkSex(sex);
+	if(checkOrder(order)){
+		if(order.toLowerCase() == 'acs' ){
+			if(limit == undefined){
+				Deaths_.find(callback).find(sex).sort({TIME: {$gt: time}});
+			}
+			else if(checkLimitParmam(limit) != 'all'){
+				Deaths_.find(callback).find(sex).sort({TIME: {$gt: time}}).find({ SEX: sex}).limit(checkLimitParmam(limit));
+			}
+			else {
+				Deaths_.find(callback).find(sex).sort({TIME: {$gt: time}}).find({ SEX: sex});
+			}
+		}
+		else if(order.toLowerCase() == 'desc'){
+			if(limit == undefined){
+				Deaths_.find(callback).find(sex).sort({TIME: {$lt: time}}).find({ SEX: sex});
+			}
+			else if(checkLimitParmam(limit) != 'all'){
+				Deaths_.find(callback).find(sex).sort({TIME: {$lt: time}}).find({ SEX: sex}).limit(checkLimitParmam(limit));
+			}
+			else {
+				Deaths_.find(callback).find(sex).sort({TIME: {$lt: time}}).find({ SEX: sex});
+			}
+		}
+	}
+	else{//ORDER IS UNDEFINED
+		Deaths_.find(callback).find(sex).limit(150);
+	}
+
+};
+function checkLimitParmam(limit){
+	console.log(limit);
+	if(limit != undefined){
+		if(limit.toLowerCase() == "all")
+			return "all";
+		if(!isNaN(limit) &&  parseInt(limit) > 0){
+			return limit;
+		}
+		else
+			return "all";
+	}
+	else return "all";
+}
+function checkOrder(order){
+	if(order == undefined){
+		return false;
+	}
+	console.log("ORDER IS NOT UNDEFINED BUT");
 
 }
