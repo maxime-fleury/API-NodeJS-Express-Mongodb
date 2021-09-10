@@ -9,6 +9,7 @@ app.use(bodyParser.json());
 
 Deaths = require('./models/deaths');
 
+
 // Connect to Mongoose
 //mongoose.connect('mongodb://admin:123oo@xill.tk:27017/death?keepAlive=true&socketTimeoutMS=360000&connectTimeoutMS=360000').catch(error => console.log(error));
 mongoose.connect('mongodb+srv://death:123oo@cluster0.jo5jn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority');
@@ -46,12 +47,12 @@ app.get('/api/death', function(req, res){
 						if(err){
 							console.log(err);
 						}
-						error = getErrors(min, max, time, limit, null, country);
+						error = getErrors(min, max, time, limit, null, sex, country);
 						//error = { error: -1, message: 'Everything is fine !'};
 						res.setHeader('Content-Type', 'application/json');
 						res.end(JSON.stringify({error, death}, null, 2));
 						
-					},limit, time, max, min, sex);
+					},limit, time, max, min, sex, country);
 				}
 				else{
 					console.log(order);
@@ -59,7 +60,7 @@ app.get('/api/death', function(req, res){
 						if(err){
 							console.log(err);
 						}
-						error = getErrors(min, max, time, limit, order);
+						error = getErrors(min, max, time, limit, order, sex, country);
 						//error = { error: -1, message: 'Everything is fine !'};
 						res.setHeader('Content-Type', 'application/json');
 						res.end(JSON.stringify({error, death}, null, 2));
@@ -72,7 +73,6 @@ app.get('/api/death', function(req, res){
 			
 			res.send(JSON.stringify({error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
 		}
-	console.log("new resquest");
 				
 });
 
@@ -82,40 +82,42 @@ app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 })
 
-function getErrors(min, max, time, limit, order){
-	res = { error: -1, message: 'Everything is fine !'};
+function getErrors(min, max, time, limit, order, sex, country){
+	res = { error: -1, message: ['Everything is fine !']};
 	if(parseInt(time) > max )
-		res = {error: 0, message: 'Params.time > max in database, time not applied.'};
-	if(parseInt(time) <= min)
-		res = {error: 1, message: 'Params.time < min in database, time not applied.'};
+		res = {error: 0, message: ['Params.time > max in database, time not applied.']};
+	if(parseInt(time) < min)
+		res = {error: 1, message: ['Params.time < min in database, time not applied.']};
 	if(!(Number.isInteger(parseInt(time, 10))))
-		res = {error: 2, message: 'Params.time is not not a number, time not applied.'};
+		res = {error: 2, message: ['Params.time is not not a number, time not applied.']};
 	if(time == undefined)
-		res = {error: 2, message: 'Params.time is not defined, time not applied.'};
-	if(res.error != -1){
-		tmp = res.message;
-		if(limit == undefined){
-			tmp = [res.message, 'Params.limit is undefined, no limit applied.'];
-		}
-		else if(!(Number.isInteger(parseInt(limit,10)))){//is a positive integer ?
-			if(limit.toLowerCase() == 'all')
-			tmp = [res.message, 'Params.limit is set to \'all\', no limit applied.'];
-			else
-			tmp = [res.message, 'Params.limit is not a number, default limit applied (150).'];
-		}else if(parseInt(limit) < 1){
-				tmp = [res.message, 'Params.limit < 1, default limit applied (150).'];
-		}
-		if(order == null){
-			res.message = tmp;
-			if(order == undefined){
-				tmp = [res.message, 'Params.order is not defined, order query not applied.'];
-			}
-			else if(order.toLowerCase() != "acs" && order.toLowerCase() != "desc"){
-				tmp = [res.message, 'Params.order is neither equal to "acs" nor "desc", order query not applied.'];
-			}
-		}
-		res.message = tmp;
+		res = {error: 2, message: ['Params.time is not defined, time not applied.']};
+
+	if(limit == undefined){
+		res.message.push('Params.limit is undefined, no limit applied.');
 	}
+	else if(!(Number.isInteger(parseInt(limit,10)))){//is a positive integer ?
+		if(limit.toLowerCase() == 'all')
+			res.message.push('Params.limit is set to \'all\', no limit applied.');
+		else
+		res.message.push('Params.limit is not a number, default limit applied (150).');
+	}else if(parseInt(limit) < 1){
+		res.message.push('Params.limit < 1, default limit applied (150).');
+	}
+	if(order != null){
+		if(order == undefined){
+			res.message.push('Params.order is not defined, order query not applied.');
+		}
+		else if(order.toLowerCase() != "asc" && order.toLowerCase() != "desc"){
+			res.message.push('Params.order is neither equal to "ASC" nor "DESC", order query not applied.');
+		}
+	}
+	if(sex != undefined)
+		if(sex.toLowerCase() != "males" && sex.toLowerCase() != "females" && sex.toLowerCase() != "female" && sex.toLowerCase() != "male" && sex.toLowerCase() != "total"
+		&& sex.toLowerCase() != "1" && sex.toLowerCase() != "0" && sex.toLowerCase() != "2" && sex.toLowerCase() != "3"){
+			res.message.push("Params.sex is not one of those value ['males', 'females', 'male', 'female', 'total', 0, 1, 2, 3], sex query not applied, any sex will be searched.");
+		}
+	//res.message = tmp;
 	return res;
 }
 ////// SOME TESTS BECAUSE IT WASN'T WORKING 
@@ -155,3 +157,5 @@ function testTimeAPI(){
 	});
 	console.log("Total: " + (time_.length) + " failed " + failed + "/" +  passedTests);
 }
+
+setTimeout( function() {require('./testapi')},3000);

@@ -4,10 +4,13 @@
   "description": "A simple API made with NodeJS & Express",
   "main": "server.js",
   "dependencies": {
-    "nodejs": "^0.0.0",
-    "express": "*",
     "body-parser": "*",
-    "mongoose": "*"
+    "express": "*",
+    "http": "0.0.1-security",
+    "mongoose": "*",
+    "nodejs": "^0.0.0",
+    "require": "^2.4.20",
+    "system-sleep": "^1.3.7"
   },
   "devDependencies": {},
   "scripts": {
