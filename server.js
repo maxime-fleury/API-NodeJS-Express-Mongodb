@@ -18,13 +18,33 @@ db.on('error', err => {
   console.log(err);
 });
 app.get('/', (req, res) => {
-  res.send('Please use /api/death/<br><a href="/doc">Documentation</a>');
+  res.send('<body class="bg-dark text-white">  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">  Please use /api/death/<br><a class="btn btn-primary m-2" href="/doc">Documentation</a><br><a class="btn btn-primary m-2" href="/connexion">Connect/register</a></body>');
   console.log('one connexion');
 })
 app.get('/doc', function(req, res) {
     res.sendFile(__dirname + '/documentation.html');
 });
-
+app.get('/connexion', function(req, res) {
+    res.sendFile(__dirname + '/connexion.html');
+});
+app.post('/connexion', function(req, res){
+	body = ""
+	req.on("data", function (chuck){
+		body += chuck;
+	});
+	let login = req.query.login;
+	let passw = req.query.passw;
+	if(login != "" && login != undefined && login != null){
+		//login OK
+		if(passw != "" && passw != undefined && passw != null){
+			//password OK
+			console.log(login + " " + passw);
+			res.send("test");
+		}
+	}
+	json = JSON.stringify(body);
+	res.send("rip" + json +  " ");
+})
 app.get('/api/death', function(req, res){
 		let limit = req.query.limit;
 		let time = req.query.time;

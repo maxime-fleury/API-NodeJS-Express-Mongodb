@@ -98,7 +98,7 @@ async function try_get(sex, limit, time, country, order){
 process.on('uncaughtException', function (err) {
     console.log(err);
 }); 
-AnwserQuestion();
+//AnwserQuestion();
 //In EU are males dying more often then females ?
 async function AnwserQuestion(){
     let  res = await try_get(undefined, undefined, 2001, undefined, "ASC");
