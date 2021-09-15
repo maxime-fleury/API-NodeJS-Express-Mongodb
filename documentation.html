@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <title>Documentation DEATH API</title>
+</head>
+<style>.nolist{list-style: none;}</style>
+<body class='bg-dark text-white'>
+    <h2 class='container'>Welcome, this is the official DOCUMENTATION of DEATH API</h2>
+    <p>What can it do ?</p>
+    <ul class='nolist'>
+        <li>-> <a href='#timeSearch'>Search death by date ?time=2004</a></li>
+        <li>-> <a href='#genderSearch'>Search by gender ?sex=females</a></li>
+        <li>-> <a href='#countrySearch'>Search by Country</a></li>
+        <li>-> <a href='#limitSearch'>Limit number of results ?limit=1</a></li>
+        <li>-> <a href='#exemple'>Example results</a></li> 
+        <li>-> <a href='#errors'>Error handling</a></li>
+    </ul><hr>
+    <div id='timeSearch' class="container"><h2>Search By Year</h2>
+        <pre><code>     api/death?time=
+        [2001] to [2010] (included)
+        if undefined will not filter by year
+        
+        exemple: api/death?time=2003 
+            will return all deaths in 2003</code></pre>
+    </div><hr>
+    <div id='genderSearch' class="container"><h2>Gender Search</h2>
+        <pre>
+            <code>api/death?gender=
+                    males, male, 1
+                    females, female, 0
+                    total
+                non case sensitive
+                exemple:
+                api/death?gender=males&time=2004
+                    will return all male death in 2004 by country
+            </code>
+        </pre>
+    </div><hr>
+    <div id='countrySearch' class="container pb-4"><h2>Search by country</h2>
+        <pre>
+            <code>
+                api/death?country=STRING
+                its not case sentitive, can be incomplete
+                will search STRING* 
+                exemple: api/death?country=GeR 
+                    will return all deaths in Germany and anything that starts with ger 
+            </code>
+        </pre>
+    </div>
+
+    <div id='limitSearch' class="container pb-4"><h2>Limit results</h2><pre>
+        api/death?limit=number
+            -> number must be a positive integer otherwise won't limit the search
+            -> only exception is "all" case nonsensitive (will not apply limit (unlimited limit))
+           
+            exemples:
+            api/death?limit=0 
+              won't return anything
+            api/death?limit=1&sex=male
+              will return only one result that is a male death stat
+            api/death?limit=-1
+              no limit
+            api/death?limit=all
+              no limit
+            api/death?limit=ANYTEXTEEEEEEEE
+                default limit (150)
+            </pre>
+        </div>
+        <hr>
+        <div id='exemple' class='container pb-4'>
+            <h2>Call exemple: </h2>
+                <pre><code>
+                    api/death?limit=2&country=Franc&time=2004&gender=male
+                    Here we want 2 results from a country that starts with Fra for the year 2004 and we want only males.
+                    result:
+                    {
+                        "error": {
+                          "error": -1,
+                          "message": [
+                            "Everything is fine !"
+                          ]
+                        },
+                        "death": [
+                          {
+                            "_id": "61376c6b5616eb64068f1aaa",
+                            "TIME": 2004,
+                            "GEO": "France",
+                            "UNIT": "Number",
+                            "SEX": "Total",
+                            "AGE": "Total",
+                            "ICD10": "All causes of death (A00-Y89) excluding S00-T98",
+                            "Value": "519 441",
+                            "Flag and Footnotes": ""
+                          },
+                          {
+                            "_id": "61376c6b5616eb64068f1aab",
+                            "TIME": 2004,
+                            "GEO": "France",
+                            "UNIT": "Number",
+                            "SEX": "Males",
+                            "AGE": "Total",
+                            "ICD10": "All causes of death (A00-Y89) excluding S00-T98",
+                            "Value": "268 653",
+                            "Flag and Footnotes": ""
+                          }
+                        ]
+                      }
+                </code></pre>
+        </div>
+        <hr>
+        <div id='errors' class='container pb-4'>
+            <h2>Errors</h2><pre><code>
+            Each call retuns error, there is always one error code and at least one message.
+                Error codes:
+                    -1 => Everything is fine.
+                     0 => Params.time > max in database, time not applied.
+                     1 => Params.time < min in database, time not applied.
+                     2 => Params.time is not not a number, time not applied.
+                     3 => Params.time is not defined, time not applied.
+
+                Other messages might be seen, they don't have error codes.
+                Params.limit is undefined, no limit applied.
+                Params.limit is set to \'all\', no limit applied.
+                Params.limit is not a number, default limit applied (150).
+                Params.limit < 1, default limit applied (150).
+                Params.sex is not one of those value ['males', 'females', 'male', 'female', 'total', 0, 1, 2, 3], sex query not applied, any sex will be searched.
+            
+                ?limit=0&country=Franc&time=a2004&sex=eee
+                Will return the following error:
+                "error": {
+                    "error": 2,
+                    "message": [
+                      "Params.time is not not a number, time not applied.",
+                      "Params.limit < 1, default limit applied (150).",
+                      "Params.sex is not one of those value ['males', 'females', 'male', 'female', 'total', 0, 1, 2, 3], sex query not applied, any sex will be searched."
+                    ]
+                  }
+            </code></pre>
+            </div>
+    </body>
+</html>

@@ -18,10 +18,12 @@ db.on('error', err => {
   console.log(err);
 });
 app.get('/', (req, res) => {
-  res.send('Please use /api/');
+  res.send('Please use /api/death/<br><a href="/doc">Documentation</a>');
   console.log('one connexion');
 })
-
+app.get('/doc', function(req, res) {
+    res.sendFile(__dirname + '/documentation.html');
+});
 
 app.get('/api/death', function(req, res){
 		let limit = req.query.limit;

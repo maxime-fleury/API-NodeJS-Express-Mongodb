@@ -42,6 +42,9 @@ module.exports.getDeaths = (callback, limit, time, max, min, sex, country) => {
 	sex = checkSex(sex);
 	time =  checkTime(time, parseInt(max), parseInt(min));
 	country = checkCountry(country);
+	if(country == undefined){
+		country = {};
+	}
 	console.log("inside death: limit = " + limit + " " + "time = " + 	time);
 	if(limit == undefined){//no limit applied
 		if(time == undefined){
@@ -73,7 +76,7 @@ module.exports.getDeaths = (callback, limit, time, max, min, sex, country) => {
 }
 function checkCountry(country){
 	if(country == undefined){
-		return {};//dark magic when you give {} (empty object) it doesn't count in the query
+		return undefined;//dark magic when you give {} (empty object) it doesn't count in the query
 	}
 	else return {GEO: {$regex: country+'*', $options: 'i' } }
 }
@@ -121,12 +124,20 @@ module.exports.getMinTime = (callback) => {//get min year in collection
 module.exports.getByOrder = (callback, limit, time, order, sex, country) =>{
 	sex = checkSex(sex);
 	country = checkCountry(country);
+	if(country == undefined){
+		country = {};
+	}
+	time =  checkTime(time, parseInt(max), parseInt(min));
+	if(time == undefined){
+		time = {};
+	}
+	console.log(JSON.stringify(country));
 	if(checkOrder(order)){
 		if(order.toLowerCase() == 'asc' ){
 			if(limit == undefined){
 				Deaths_.find(callback).find({"$and": [sex, country]}).sort({TIME: {$gt: time}});
 			}
-			else if(checkLimitParmam(limit) != 'all'){
+			else if(checkLimitParmam(limit) == 'all'){
 				Deaths_.find(callback).find({"$and": [sex, country]}).sort({TIME: {$gt: time}});
 			}
 			else {
@@ -137,7 +148,7 @@ module.exports.getByOrder = (callback, limit, time, order, sex, country) =>{
 			if(limit == undefined){
 				Deaths_.find(callback).find({"$and": [sex, country]}).sort({TIME: {$lt: time}});
 			}
-			else if(checkLimitParmam(limit) != 'all'){
+			else if(checkLimitParmam(limit) == 'all'){
 				Deaths_.find(callback).find({"$and": [sex, country]}).sort({TIME: {$lt: time}});
 			}
 			else {
@@ -145,7 +156,7 @@ module.exports.getByOrder = (callback, limit, time, order, sex, country) =>{
 			}
 		}
 	}
-	else{//ORDER IS UNDEFINED
+	else{//ORDER IS UNDEFINED OR NOT ONE OF THE EXPECTED VALUE
 		Deaths_.find(callback).find({"$and": [sex, country]}).limit(checkLimitParmam(limit));
 	}
 
@@ -155,7 +166,7 @@ function checkLimitParmam(limit){
 	if(limit != undefined){
 		if(limit.toLowerCase() == "all")
 			return "all";
-		if(!isNaN(limit) &&  parseInt(limit) > 0){
+		if(!isNaN(limit) &&  parseInt(limit) >= 0){
 			return limit;
 		}
 		else
