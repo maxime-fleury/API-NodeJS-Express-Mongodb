@@ -4,8 +4,11 @@
   "description": "A simple API made with NodeJS & Express",
   "main": "server.js",
   "dependencies": {
+    "base64url": "^3.0.1",
     "body-parser": "*",
+    "crypto": "^1.0.1",
     "express": "*",
+    "express-session": "^1.17.2",
     "http": "0.0.1-security",
     "mongoose": "*",
     "nodejs": "^0.0.0",

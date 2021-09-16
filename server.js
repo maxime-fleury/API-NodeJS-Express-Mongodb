@@ -1,14 +1,21 @@
 const express = require('express');
+const session = require('express-session');
 const app = express();
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const { register } = require('./models/user');
 const port = 8001;
+var sess;
 
 app.use(express.static(__dirname+'/client'));
+app.use(bodyParser.urlencoded({
+	extended: true
+}));
 app.use(bodyParser.json());
+app.use(session({secret: 'seccret1', saveUninitialized: true, resave: true, cookie:{ maxAge: 6000000 }}))
 
 Deaths = require('./models/deaths');
-
+user_ = require('./models/user');
 
 // Connect to Mongoose
 //mongoose.connect('mongodb://admin:123oo@xill.tk:27017/death?keepAlive=true&socketTimeoutMS=360000&connectTimeoutMS=360000').catch(error => console.log(error));
@@ -24,80 +31,202 @@ app.get('/', (req, res) => {
 app.get('/doc', function(req, res) {
     res.sendFile(__dirname + '/documentation.html');
 });
+app.get('/disconnect', function(req, res){
+	sess = req.session;
+	sess.login = undefined;
+	sess.passw = undefined;
+	sess.newToken = undefined;
+	try{
+		res.redirect('/connexion')
+	}
+	catch(err){
+		throw err;
+	}
+});
 app.get('/connexion', function(req, res) {
-    res.sendFile(__dirname + '/connexion.html');
+	try{
+		sess = req.session;
+		console.log(sess.login);
+		if(sess.login != undefined){
+			res.redirect('/connexion');
+			console.log("login isn't undefined so redirected");
+		}else {
+			res.sendFile(__dirname + '/connexion.html');
+		}
+	}
+	catch(err){
+		throw(err);
+	}
+	
 });
 app.post('/connexion', function(req, res){
+	//HANDLE SESSION CONNEXION
+	sess = req.session;
 	body = ""
-	req.on("data", function (chuck){
-		body += chuck;
-	});
-	let login = req.query.login;
-	let passw = req.query.passw;
+	let login = sess.login;
+	let passw = sess.passwd;
+	let newToken = undefined;
+	if(req.body.login != undefined){
+		login = req.body.login;
+	}	
+	if(req.body.login != undefined){
+		 passw = req.body.passw;
+	}
+	if(req.body.newToken != undefined){
+		newToken = req.body.newToken;
+	}
+
+
 	if(login != "" && login != undefined && login != null){
 		//login OK
 		if(passw != "" && passw != undefined && passw != null){
 			//password OK
-			console.log(login + " " + passw);
-			res.send("test");
-		}
-	}
-	json = JSON.stringify(body);
-	res.send("rip" + json +  " ");
-})
-app.get('/api/death', function(req, res){
-		let limit = req.query.limit;
-		let time = req.query.time;
-		let order = req.query.order; 
-		let sex = req.query.sex;
-		let country = req.query.country;
-		//I don't know why its like that, its too weird couldn't find a way to
-		//get max and min, before you need a callback function and stuff doesn't
-		//exists outsite "Deaths.get...({function(){ HERE }});"
-		//I'm pretty sure its not meant to be used like this because this is
-		//insanly inconvenient 
-		if(!(limit == undefined && time == undefined && order == undefined))
-		Deaths.getMaxTime(function(err, death){
-			if(err){
-				console.log(err);
-			}
-			max = death[0].TIME;
-			Deaths.getMinTime(function(err, death){
-				min = death[0].TIME;
-				if(order == undefined){
-					Deaths.getDeaths(function(err, death){ 
-						if(err){
-							console.log(err);
-						}
-						error = getErrors(min, max, time, limit, null, sex, country);
-						//error = { error: -1, message: 'Everything is fine !'};
-						res.setHeader('Content-Type', 'application/json');
-						res.end(JSON.stringify({error, death}, null, 2));
-						
-					},limit, time, max, min, sex, country);
+			user_.connect(function(err, user){
+				//console.log(JSON.stringify(user));
+				emptyArr = [];
+				if(JSON.stringify(user)  === JSON.stringify(emptyArr)){
+					res.send("No user found !");
 				}
 				else{
-					console.log(order);
-					Deaths.getByOrder(function(err, death){ 
-						if(err){
-							console.log(err);
-						}
-						error = getErrors(min, max, time, limit, order, sex, country);
-						//error = { error: -1, message: 'Everything is fine !'};
-						res.setHeader('Content-Type', 'application/json');
-						res.end(JSON.stringify({error, death}, null, 2));
-						
-					},limit, time, order, sex, country);
+					if(sess.login != undefined){
+						sess.login = login;
+					}
+					console.log(newToken);
+					disconnectBtn = "<a href='/disconnect' class='btn btn-primary mb-2 mt-2'>Disconnect</a>";
+					if(newToken == "getNewToken"){
+						console.log(true);
+						user_.newToken(function(err3, newToken_){
+							user_.getToken(function(err2, token_){
+								//console.log(token_);
+								boostrap = '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">';
+								html = "<form action='/connexion' method='post'> <input type='hidden' name='login' value='" + login + "'><input type='hidden' name='passw' value='" + passw + "'> <input type='hidden' name='newToken' value='getNewToken'><input type='submit' value='Get new Token' class='m-2 btn btn-primary'></form>";
+								res.send(boostrap + disconnectBtn + "<div class='container'><p class='mb-2'>Your access Token</p><input class='form-control  text-center' style='max-width:300px' size='30' disabled value='" + token_[0].token + "'>" + html);
+							}, login);
+						}, login);
+					} else{
+					
+						user_.getToken(function(err2, token_){
+							//console.log(token_);
+							boostrap = '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">';
+							html = "<form action='/connexion' method='post'> <input type='hidden' name='login' value='" + login + "'><input type='hidden' name='passw' value='" + passw + "'> <input type='hidden' name='newToken' value='getNewToken'><input type='submit' value='Get new Token' class='m-2 btn btn-primary'></form>";
+							res.send(boostrap + disconnectBtn + "<div class='container'><p class='mb-2'>Your access Token</p><input class='form-control  text-center' style='max-width:300px' size='30' disabled value='" + token_[0].token + "'>" + html);
+						}, login);
+					}
 				}
-			});
-		});
-		else{
-			
-			res.send(JSON.stringify({error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
-		}
-				
-});
 
+			}, login, passw)
+		}
+	}
+	else{
+		json = JSON.stringify(req.body.login);
+		res.send("rip" + json +  " ");
+	}
+})
+app.get('/register', function(req, res) {
+    res.sendFile(__dirname + '/connexion.html');
+});
+app.post('/register', function(req, res){
+	body = ""
+	let login = req.body.login;
+	let passw = req.body.passw;
+	if(login != "" && login != undefined && login != null){
+		//login OK
+		console.log("login ok");
+		if(passw != "" && passw != undefined && passw != null){
+			//password OK
+			console.log("password ok");
+			user_.findByLogin(function(err, user){
+				count = user;
+				console.log("count user ok" + count);
+				if(count == 0){
+					console.log("count ok : " + count);
+					user_.register(function(err2, user2){
+						console.log("registered yes !")
+						res.send("userCreated !");
+					}, login, passw)
+				}
+			}, login);
+
+		}
+	}
+	else{
+		json = JSON.stringify(req.body.login);
+		res.send("rip" + json +  " ");
+	}
+})
+app.get('/api/death', function(req, res){
+		let token = req.query.token;
+		if(checkToken(token, 0)){
+			let limit = req.query.limit;
+			let time = req.query.time;
+			let order = req.query.order; 
+			let sex = req.query.sex;
+			let country = req.query.country;
+			//I don't know why its like that, its too weird couldn't find a way to
+			//get max and min, before you need a callback function and stuff doesn't
+			//exists outsite "Deaths.get...({function(){ HERE }});"
+			//I'm pretty sure its not meant to be used like this because this is
+			//insanly inconvenient 
+			if(!(limit == undefined && time == undefined && order == undefined))
+			Deaths.getMaxTime(function(err, death){
+				if(err){
+					console.log(err);
+				}
+				max = death[0].TIME;
+				Deaths.getMinTime(function(err, death){
+					min = death[0].TIME;
+					if(order == undefined){
+						Deaths.getDeaths(function(err, death){ 
+							if(err){
+								console.log(err);
+							}
+							error = getErrors(min, max, time, limit, null, sex, country);
+							//error = { error: -1, message: 'Everything is fine !'};
+							res.setHeader('Content-Type', 'application/json');
+							res.end(JSON.stringify({error, death}, null, 2));
+							
+						},limit, time, max, min, sex, country);
+					}
+					else{
+						console.log(order);
+						Deaths.getByOrder(function(err, death){ 
+							if(err){
+								console.log(err);
+							}
+							error = getErrors(min, max, time, limit, order, sex, country);
+							//error = { error: -1, message: 'Everything is fine !'};
+							res.setHeader('Content-Type', 'application/json');
+							res.end(JSON.stringify({error, death}, null, 2));
+							
+						},limit, time, order, sex, country);
+					}
+				});
+			});
+			else{
+				
+				res.send(JSON.stringify({error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
+			}
+		}
+	else{
+		res.send(checkToken(token,1));
+	}		
+});
+function checkToken(token, typeofcheck){
+	if(typeofcheck == 0){
+		user_.findByToken(function(err, tok){
+			if(JSON.stringify(tok) == "[]")
+				console.log("NON NON NON");
+			else{
+				console.log("OUI OUI OUI" + tok);
+			}
+		}, token);
+		return true;
+	}
+	else{
+		error = {error_code: 4, message: "Invalid Token !"};
+		return JSON.stringify(error);
+	}
+}
 app.post('/')
 
 app.listen(port, () => {
