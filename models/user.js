@@ -21,11 +21,11 @@ const userSchema = mongoose.Schema({
 	},
     callAllowed:{
         type: Number,
-        required: false
+        required: false, default:10000
     },
     callMade:{
         type: Number,
-        required: false
+        required: false, default: 0
     }
 });
 

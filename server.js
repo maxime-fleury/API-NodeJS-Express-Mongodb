@@ -155,8 +155,18 @@ app.post('/register', function(req, res){
 	}
 })
 app.get('/api/death', function(req, res){
+		sess = req.session;
 		let token = req.query.token;
-		if(checkToken(token, 0)){
+		user_.findByToken(function(err, tok){
+			if(JSON.stringify(tok) == "[]"){
+				res.send({error: 9, message: ['Hmm invalid Token !']});
+			}
+			
+			else{
+
+			user_.addCall(function(err, added_tok){
+				
+			let calls = { "call": added_tok.callMade + "/" + added_tok.callAllowed};
 			let limit = req.query.limit;
 			let time = req.query.time;
 			let order = req.query.order; 
@@ -183,7 +193,7 @@ app.get('/api/death', function(req, res){
 							error = getErrors(min, max, time, limit, null, sex, country);
 							//error = { error: -1, message: 'Everything is fine !'};
 							res.setHeader('Content-Type', 'application/json');
-							res.end(JSON.stringify({error, death}, null, 2));
+							res.end(JSON.stringify({calls, error, death}, null, 2));
 							
 						},limit, time, max, min, sex, country);
 					}
@@ -196,7 +206,7 @@ app.get('/api/death', function(req, res){
 							error = getErrors(min, max, time, limit, order, sex, country);
 							//error = { error: -1, message: 'Everything is fine !'};
 							res.setHeader('Content-Type', 'application/json');
-							res.end(JSON.stringify({error, death}, null, 2));
+							res.end(JSON.stringify({calls, error, death}, null, 2));
 							
 						},limit, time, order, sex, country);
 					}
@@ -204,29 +214,15 @@ app.get('/api/death', function(req, res){
 			});
 			else{
 				
-				res.send(JSON.stringify({error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
+				res.send(JSON.stringify({calls, error: 0, message: 'Params.time && Params.limit && Params.order = undefined, no query executed.'}, null, 2));
 			}
+		},token);
 		}
-	else{
-		res.send(checkToken(token,1));
-	}		
+		},token);
+
 });
-function checkToken(token, typeofcheck){
-	if(typeofcheck == 0){
-		user_.findByToken(function(err, tok){
-			if(JSON.stringify(tok) == "[]")
-				console.log("NON NON NON");
-			else{
-				console.log("OUI OUI OUI" + tok);
-			}
-		}, token);
-		return true;
-	}
-	else{
-		error = {error_code: 4, message: "Invalid Token !"};
-		return JSON.stringify(error);
-	}
-}
+
+
 app.post('/')
 
 app.listen(port, () => {
